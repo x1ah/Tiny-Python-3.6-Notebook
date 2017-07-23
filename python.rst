@@ -261,6 +261,28 @@ Python 3 strings hold unicode data. Python has a few ways to represent strings. 
   Byte string      ``b'hello'``
   ================ ===========================
 
+.. table:: Escape Characters
+
+  =================== =================
+  Escape Sequence     Output
+  =================== =================
+  ``\`` newline       Ignore trailing newline in triple quoted string
+  ``\\``              Backslash
+  ``\'``              Single quote
+  ``\"``              Double quote
+  ``\a``              ASCII Bell
+  ``\b``              ASCII Backspace
+  ``\n``              Newline
+  ``\r``              ASCII carriage return
+  ``\t``              Tab
+  ``\u12af``          Unicode 16 bit
+  ``\U12af89bc``      Unicode 32 bit
+  ``N{BLACK STAR}``   Unicode name
+  ``\o84``            Octal character
+  ``\xFF``            Hex character
+  =================== =================
+  
+
 
 ..  longtable: format: {p{.3\textwidth} l >{\raggedright\arraybackslash}p{.3\textwidth}}
 
@@ -579,17 +601,17 @@ We can access members by position or name (name allows us to be more explicit)::
   ``"{}".format(t)``                 ``__format__``            String format of tuple
   ``t >= t2``                        ``__ge__``                Greater or equal. Compares items in tuple from left
   ``t[idx]``                         ``__getitem__``           Index operation
-  ``t > l2``                         ``__gt__``                Greater. Compares items in tuple from left
+  ``t > t2``                         ``__gt__``                Greater. Compares items in tuple from left
   ``hash(t)``                        ``__hash__``              For set/dict insertion
   ``for thing in t:``                ``__iter__``              Iteration
   ``t <= t2``                        ``__le__``                Less than or equal. Compares items in tuple from left
-  ``len(l)``                         ``__len__``               Length
+  ``len(t)``                         ``__len__``               Length
   ``t < t2``                         ``__lt__``                Less than. Compares items in tuple from left
   ``t * 2``                          ``__mul__``               Repetition
-  ``t != l2``                        ``__ne__``                Not equal
+  ``t != t2``                        ``__ne__``                Not equal
   ``repr(t)``                        ``__repr__``              Programmer friendly string
   ``foo * t``                        ``__rmul__``              Called if ``foo`` doesn't implement ``__mul__``
-  ``l.__sizeof__()``                 ``__sizeof__``            Bytes for internal representation
+  ``t.__sizeof__()``                 ``__sizeof__``            Bytes for internal representation
   ``str(l)``                         ``__str__``               User friendly string
   ================================== ========================= ============================================================
 
@@ -663,7 +685,7 @@ Sets are useful because they provide *set operations*, such as union
   ``s == s2``                             ``__eq__``                Equality. Sets are equal or not equal
   ``"{}".format(s)``                      ``__format__``            String format of set
   ``s >= s2``                             ``__ge__``                ``s`` in ``s2`` (see ``.issuperset``)
-  ``s > s2``                              ``__gt__``                Greater. Always ``False```
+  ``s > s2``                              ``__gt__``                Strict superset (``s >= s2`` but ``s != s2``).
   No hash                                 ``__hash__``              Set to ``None`` to ensure you can't insert in dictionary
   ``s &= s2``                             ``__iand__``              Augmented (mutates ``s``) intersection (see ``.intersection_update``)
   ``s |= s2``                             ``__ior__``               Augmented (mutates ``s``) union (see ``.update``)
@@ -672,7 +694,7 @@ Sets are useful because they provide *set operations*, such as union
   ``s ^= s2``                             ``__ixor__``              Augmented (mutates ``s``) xor (see ``.symmetric_difference_update``)
   ``s <= s2``                             ``__le__``                ``s2`` in ``s`` (see ``.issubset``)
   ``len(s)``                              ``__len__``               Length 
-  ``s < s2``                              ``__lt__``                Less than. Always ``False``
+  ``s < s2``                              ``__lt__``                Strict subset (``s <= s2`` but ``s != s2``).
   ``s != s2``                             ``__ne__``                Not equal
   ``s | s2``                              ``__or__``                Set union (see ``.union``)
   ``foo & s``                             ``__rand__``              Called if ``foo`` doesn't implement ``__and__``
@@ -757,7 +779,7 @@ In the default namespace you have access to various callables:
   ``enumerate(seq, [start])``                                       Return iterator of index, item tuple pairs. Index begins at ``start`` or ``0`` (default)
   ``eval(source, globals=None, locals=None)``                       Run ``source`` (expression string or result of ``compile``) with globals and locals
   ``exec(source, globals=None, locals=None)``                       Run ``source`` (statement string or result of ``compile``) with globals and locals
-  ``exit(code)``                                                    Exit Python interpreter and return code
+  ``exit([code])``                                                    Exit Python interpreter and return code (default 0)
   ``filter([function], seq)``                                       Return iterator of items where ``function(item)`` is truthy (or ``item`` is truthy if ``function`` is missing)
   ``float(x)``                                                      Convert string or number to float (call ``x.__float__()``)
   ``format(obj, fmt)``                                              Format protocol (call ``obj.__format__(fmt)``)
@@ -1183,7 +1205,7 @@ Functions can support variable keyword arguments::
   but 1 was given
 
 
-You can indicate the end of positional parameters by using a single ``*``. This gives you keyword only parameters (PEP 3102)::
+You can indicate the end of positional parameters by using a single ``*``. This gives you *keyword only* parameters (PEP 3102)::
 
   >>> def add_points(*, x1=0, y1=0, x2=0, y2=0):
   ...     return x1 + x2, y1 + y2
@@ -1242,6 +1264,9 @@ You can also combine ``*`` and ``**`` on invocation::
 
   >>> add_all(*sizes, **named_sizes)
   10.5
+
+Getting Help
+------------
 
 You can get help on a function that has a docstring by using ``help``::
 
@@ -1552,6 +1577,7 @@ and an optional ``else`` statement at the end. In Python, the word ``elif`` is D
 
 Python supports the following tests: ``>``, ``>=``, ``<``, ``<=``, ``==``, and ``!=``. For boolean operators use ``and``, ``or``, and ``not`` (``&``, ``|``, and ``^`` are the bitwise operators).
 
+
 Note that Python also supports *range comparisons*::
 
   >>> x = 4
@@ -1605,6 +1631,31 @@ The following table lists *truthy* and *falsey* values:
 | ``'0'``           |                                 |
 +-------------------+---------------------------------+
 
+Short Circuiting
+----------------
+
+The ``and`` statement will short circuit if it evaluates to false::
+
+  >>> 0 and 1/0
+  0
+
+Likewise, the ``or`` statement will short circuit when something evaluates to true::
+
+  >>> 1 or 1/0
+  1
+
+Ternary Operator
+------------------
+
+Python has its own ternary operator, called a *conditional expression* (see PEP 308). These are handy as they can be used in comprehension constructs and ``lambda`` functions::
+
+  >>> last = 'Lennon' if band == 'Beatles' else 'Jones'
+
+Note that this has similar behavior to an ``if`` statement, but it is an expression, and not a statement. Python
+distinguishes these two. An easy way to determine between the two, is to remember that an expression follows a ``return`` statement. Anything you can ``return`` is an expression.
+
+
+  
 
 
 Exceptions
@@ -2278,14 +2329,14 @@ You can import a package or a module::
   import packagename
   import packagename.module1
 
-Assume there is a ``fib`` function in ``module1``. You have access to everything in the namespace of the module you imported::
+Assume there is a ``fib`` function in ``module1``. You have access to everything in the namespace of the module you imported. To use this function you will need to use the fully qualified name, ``packagename.module1.fib``::
 
   import packagename.module1
 
   packagename.module1.fib()
 
-To use this you will need to use the fully qualified name, ``packagename.module1.fib``.
-If you only want to import the ``fib`` use the ``from`` variant::
+
+If you only want to import the ``fib`` function, use the ``from`` variant::
 
   from packagename.module1 import fib
 
